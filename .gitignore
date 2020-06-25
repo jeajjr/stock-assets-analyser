@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Jupyter realted
+.ipynb_checkpoints/
+
 # VS Code related
 .vscode/
 
