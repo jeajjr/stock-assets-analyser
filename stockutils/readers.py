@@ -3,21 +3,6 @@
 import sys
 import os
 
-'''
-Expected directory history:
-
-.
-|
- - raw-input: raw stock history files downloaded from B3 website
- - user-input: user purchase history file location
- - cache: cache storage
-'''
-
-# Global consttants
-RAW_INPUT_DIRECTORY = 'raw-input'
-USER_INPUT_DIRECTORY = 'user-input'
-CACHE_DIRECTORY = 'cache'
-
 class Transaction:
     def __init__(self, ticker='', date='', buyQtty=0, sellQtty=0, buyPrice=0.00, sellPrice=0.00):
         """Class constructor"""
@@ -41,7 +26,7 @@ class B3HistoryImporter:
     exchange) website.
     """
 
-    def __init__(self, assets):
+    def __init__(self, assets, inputdir):
         """Class constructor
         
         Sould receive the list of assets the user. Only data for the specified
@@ -52,6 +37,9 @@ class B3HistoryImporter:
         self.__assetData = {}
         for asset in self.__assetNames:
             self.__assetData[asset] = {}
+
+        # input files directory
+        self.inputdir = inputdir
 
         # raw input (RI) file constants
         self.__RI_REG_DATE_START = 2
@@ -66,7 +54,7 @@ class B3HistoryImporter:
         """Returns list of files under raw input files directory."""
 
         files = []
-        with os.scandir(path=RAW_INPUT_DIRECTORY) as it:
+        with os.scandir(path=self.inputdir) as it:
             for entry in it:
                 if not entry.name.startswith('.') and entry.is_file():
                     files.append(entry.name)
@@ -87,7 +75,7 @@ class B3HistoryImporter:
         class instance creation."""
 
         for file in self.listRawInputFiles():
-            with open(os.path.join(RAW_INPUT_DIRECTORY, file)) as f:
+            with open(os.path.join(self.inputdir, file)) as f:
                 for line in f:
                     for asset in self.__assetNames:
                         if asset in line:
@@ -127,14 +115,17 @@ class UserDataImporter:
         5. Sell average price (with or without leading $)
     """
 
-    def __init__(self):
+    def __init__(self, inputdir):
         """Class constructor"""
+
+        # input files directory
+        self.inputdir = inputdir
 
     def listUserInputFiles(self):
         """Returns list of files under user input files directory."""
 
         files = []
-        with os.scandir(path=USER_INPUT_DIRECTORY) as it:
+        with os.scandir(path=self.inputdir) as it:
             for entry in it:
                 if not entry.name.startswith('.') and entry.is_file():
                     files.append(entry.name)
@@ -163,26 +154,8 @@ class UserDataImporter:
 
         transactions = []
         for file in self.listUserInputFiles():
-            with open(os.path.join(USER_INPUT_DIRECTORY, file)) as f:
+            with open(os.path.join(self.inputdir, file)) as f:
                 for line in f:
                     transactions.append(self.parseUserInputLine(line))
 
         return transactions
-
-def main():
-    print('Starting...')
-
-    assetsList = []
-
-    udi = UserDataImporter()
-    transactions = udi.getUserInputData()
-    
-    for transaction in transactions:
-        if transaction.ticker not in assetsList:
-            assetsList.append(transaction.ticker)
-        
-    hi = B3HistoryImporter(assetsList)
-    hi.readAndParseRawInputFile()
-
-if __name__== "__main__":
-    main()
