@@ -28,7 +28,7 @@ class B3HistoryImporter:
 
     def __init__(self, assets, inputdir):
         """Class constructor
-        
+       
         Sould receive the list of assets the user. Only data for the specified
         assets will be processed from the input raw data files."""
 
@@ -56,14 +56,14 @@ class B3HistoryImporter:
         files = []
         with os.scandir(path=self.inputdir) as it:
             for entry in it:
-                if not entry.name.startswith('.') and entry.is_file():
+                if not entry.name.startswith('.') and entry.name.startswith('COTA') and entry.is_file():
                     files.append(entry.name)
 
         return files
 
     def parseRawInputLine(self, line):
         """Receives a line from a raw input file and returns its parsed data."""
-        
+       
         ticker = str.strip(line[self.__RI_REG_TICKER_START:self.__RI_REG_TICKER_END])
         date = line[self.__RI_REG_DATE_START:self.__RI_REG_DATE_END]
         avgPrice = int(line[self.__RI_REG_AVG_PRICE_START:self.__RI_REG_AVG_PRICE_END]) / 100
@@ -95,7 +95,7 @@ class B3HistoryImporter:
         if ticker not in self.__assetData:
             print("No data for ticker", ticker)
             return None
-        
+       
         return self.__assetData[ticker]
 
 class UserDataImporter:
@@ -135,7 +135,7 @@ class UserDataImporter:
     def parseUserInputLine(self, line):
         """Receives a line from a user input file and returns its parsed data as
         a Transaction instance."""
-        
+       
         t = Transaction()
         tokens = line.split()
 
@@ -159,3 +159,109 @@ class UserDataImporter:
                     transactions.append(self.parseUserInputLine(line))
 
         return transactions
+
+class IBOVHistoryImporter:
+    """ Set of methods to deal with IBOV history files
+
+    Contains methods for reading, parsing and caching IBOV history data. Files
+    should be named IBOV*, and be a CSV with headers:
+    "DATE","OPENING","CLOSING","VARIATION","MINIMUM","MAXIMUM","VOLUME"
+    """
+
+    OPENING = "OPENING"
+    CLOSING = "CLOSING"
+    VARIATION = "VARIATION"
+    MINIMUM = "MINIMUM"
+    MAXIMUM = "MAXIMUM"
+    #VOLUME = "VOLUME"
+
+    def __init__(self, inputdir):
+        """Class constructor
+       
+        Should receive directory where IBOV data CSV files will be.
+        """
+
+        # input files directory
+        self.inputdir = inputdir
+
+    def listIBOVInputFiles(self):
+        """Returns list of files under raw input files directory."""
+
+        files = []
+        with os.scandir(path=self.inputdir) as it:
+            for entry in it:
+                if not entry.name.startswith('.') and entry.name.startswith('IBOV') and entry.is_file():
+                    files.append(entry.name)
+
+        return files
+
+    def parseIBOVInputLine(self, line):
+        """Receives a content line from a IBOV input file and returns its parsed data."""
+       
+        line = line.strip('\n')
+        lineTokens = [p.strip('"') for p in line.split(',')]
+
+        dateParts = lineTokens[0].split('/')
+        date = "{}-{}-{}".format(dateParts[2], dateParts[1], dateParts[0])
+
+        dicEntry = {}
+        try:
+            dicEntry[self.OPENING] = int(lineTokens[1].replace('.', ''))
+        except:
+            dicEntry[self.OPENING] = 0
+
+        try:
+            dicEntry[self.CLOSING] = int(lineTokens[2].replace('.', ''))
+        except:
+            dicEntry[self.CLOSING] = 0
+
+        try:
+            dicEntry[self.VARIATION] = float("{}.{}".format(lineTokens[3], lineTokens[4]))
+        except:
+            dicEntry[self.VARIATION] = 0
+
+        try:
+            dicEntry[self.MINIMUM] = int(lineTokens[5].replace('.', ''))
+        except:
+            dicEntry[self.MINIMUM] = 0
+
+        try:
+            dicEntry[self.MAXIMUM] = int(lineTokens[6].replace('.', ''))
+        except:
+            dicEntry[self.MAXIMUM] = 0
+
+        
+        #dicEntry[self.VOLUME] = lineTokens[6].replace('.', '')
+
+        return date, dicEntry 
+
+    def readAndParseIBOVInputFile(self):
+        """Read all IBOV input files and parses data for the specified assets upon
+        class instance creation.
+       
+        Return a dictionary within another dictionary, where data is accessed like:
+        result[DATE][PARAMETER], where:
+        - DATE is in "YYYY-MM-DD" format
+        - PARAMETER is one of the following:
+            - IBOVHistoryImporter.OPENING
+            - IBOVHistoryImporter.CLOSING
+            - IBOVHistoryImporter.VARIATION
+            - IBOVHistoryImporter.MINIMUM
+            - IBOVHistoryImporter.MAXIMUM
+            - IBOVHistoryImporter.VOLUME
+        """
+
+        result = {}
+
+        for file in self.listIBOVInputFiles():
+            firstLine = True
+            with open(os.path.join(self.inputdir, file)) as f:
+                for line in f:
+                    if firstLine:
+                        firstLine = False
+                        pass
+                    else:
+                        date, dateParams = self.parseIBOVInputLine(line)
+                        result[date] = dateParams
+
+        return result
