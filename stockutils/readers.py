@@ -202,7 +202,7 @@ class IBOVHistoryImporter:
         lineTokens = [p.strip('"') for p in line.split(',')]
 
         dateParts = lineTokens[0].split('/')
-        date = "{}-{}-{}".format(dateParts[2], dateParts[1], dateParts[0])
+        date = "{}{}{}".format(dateParts[2], dateParts[1], dateParts[0])
 
         dicEntry = {}
         try:
