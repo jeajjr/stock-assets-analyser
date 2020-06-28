@@ -4,6 +4,10 @@ import sys
 import os
 
 class Transaction:
+    """
+    Single transaction data placeholder.
+    """
+
     def __init__(self, ticker='', date='', buyQtty=0, sellQtty=0, buyPrice=0.00, sellPrice=0.00):
         """Class constructor"""
         self.ticker = ticker
@@ -17,6 +21,25 @@ class Transaction:
         return "[ticker = {}, date = {}, buyQtty = {}, sellQtty = {}, \
 buyPrice = {:.2f}, sellPrice = {:.2f}]".format(self.ticker, self.date,
         self.buyQtty, self.sellQtty, self.buyPrice, self.sellPrice)
+
+class IBOVDayData:
+    """
+    Single day IBOV data placeholder.
+    """
+    
+    def __init__(self, opening=0, closing=0, variation=0.00, minimum=0, maximum=0, volume=0):
+        """Class constructor"""
+        self.opening = opening
+        self.closing = closing
+        self.variation = variation
+        self.minimum = minimum
+        self.maximum = maximum
+        self.volume = volume
+
+    def __str__(self):
+        return "[opening = {}, closing = {}, variation = {}, minimum = {}, \
+maximum = {:.2f}, volume = {:.2f}]".format(self.opening, self.closing,
+        self.variation, self.minimum, self.maximum, self.volume)
 
 class B3HistoryImporter:
     """ Set of methods to deal with raw stock history files from B3
@@ -164,16 +187,9 @@ class IBOVHistoryImporter:
     """ Set of methods to deal with IBOV history files
 
     Contains methods for reading, parsing and caching IBOV history data. Files
-    should be named IBOV*, and be a CSV with headers:
-    "DATE","OPENING","CLOSING","VARIATION","MINIMUM","MAXIMUM","VOLUME"
+    should be named IBOV*, and be a CSV with fields:
+    "date","opening","closing","variation","minimum","maximum","volume"
     """
-
-    OPENING = "OPENING"
-    CLOSING = "CLOSING"
-    VARIATION = "VARIATION"
-    MINIMUM = "MINIMUM"
-    MAXIMUM = "MAXIMUM"
-    #VOLUME = "VOLUME"
 
     def __init__(self, inputdir):
         """Class constructor
@@ -204,36 +220,36 @@ class IBOVHistoryImporter:
         dateParts = lineTokens[0].split('/')
         date = "{}{}{}".format(dateParts[2], dateParts[1], dateParts[0])
 
-        dicEntry = {}
+        idd = IBOVDayData()
         try:
-            dicEntry[self.OPENING] = int(lineTokens[1].replace('.', ''))
+            idd.opening = int(lineTokens[1].replace('.', ''))
         except:
-            dicEntry[self.OPENING] = 0
+            pass
 
         try:
-            dicEntry[self.CLOSING] = int(lineTokens[2].replace('.', ''))
+            idd.closing = int(lineTokens[2].replace('.', ''))
         except:
-            dicEntry[self.CLOSING] = 0
+            pass
 
         try:
-            dicEntry[self.VARIATION] = float("{}.{}".format(lineTokens[3], lineTokens[4]))
+            idd.variation = float("{}.{}".format(lineTokens[3], lineTokens[4]))
         except:
-            dicEntry[self.VARIATION] = 0
+            pass
 
         try:
-            dicEntry[self.MINIMUM] = int(lineTokens[5].replace('.', ''))
+            idd.minimum = int(lineTokens[5].replace('.', ''))
         except:
-            dicEntry[self.MINIMUM] = 0
+            pass
 
         try:
-            dicEntry[self.MAXIMUM] = int(lineTokens[6].replace('.', ''))
+            idd.maximum = int(lineTokens[6].replace('.', ''))
         except:
-            dicEntry[self.MAXIMUM] = 0
+            pass
 
         
         #dicEntry[self.VOLUME] = lineTokens[6].replace('.', '')
 
-        return date, dicEntry 
+        return date, idd 
 
     def readAndParseIBOVInputFile(self):
         """Read all IBOV input files and parses data for the specified assets upon
@@ -261,7 +277,7 @@ class IBOVHistoryImporter:
                         firstLine = False
                         pass
                     else:
-                        date, dateParams = self.parseIBOVInputLine(line)
-                        result[date] = dateParams
+                        date, idd = self.parseIBOVInputLine(line)
+                        result[date] = idd
 
         return result
