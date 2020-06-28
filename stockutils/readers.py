@@ -8,26 +8,30 @@ class Transaction:
     Single transaction data placeholder.
     """
 
-    def __init__(self, ticker='', date='', buyQtty=0, sellQtty=0, buyPrice=0.00, sellPrice=0.00):
+    def __init__(self, ticker='', date='', buyQtty=0, sellQtty=0, buyPrice=0.00, 
+        sellPrice=0.00):
         """Class constructor"""
         self.ticker = ticker
-        self.date = date
         self.buyQtty = buyQtty
         self.sellQtty = sellQtty
         self.buyPrice = buyPrice
         self.sellPrice = sellPrice
 
     def __str__(self):
-        return "[ticker = {}, date = {}, buyQtty = {}, sellQtty = {}, \
-buyPrice = {:.2f}, sellPrice = {:.2f}]".format(self.ticker, self.date,
-        self.buyQtty, self.sellQtty, self.buyPrice, self.sellPrice)
+        return "[ticker = {}, buyQtty = {}, sellQtty = {}, \
+buyPrice = {:.2f}, sellPrice = {:.2f}]".format(self.ticker, self.buyQtty, 
+        self.sellQtty, self.buyPrice, self.sellPrice)
+
+    def __repr__(self):
+        return str(self)
 
 class IBOVDayData:
     """
     Single day IBOV data placeholder.
     """
     
-    def __init__(self, opening=0, closing=0, variation=0.00, minimum=0, maximum=0, volume=0):
+    def __init__(self, opening=0, closing=0, variation=0.00, minimum=0, maximum=0, 
+        volume=0):
         """Class constructor"""
         self.opening = opening
         self.closing = closing
@@ -41,6 +45,9 @@ class IBOVDayData:
 maximum = {:.2f}, volume = {:.2f}]".format(self.opening, self.closing,
         self.variation, self.minimum, self.maximum, self.volume)
 
+    def __repr__(self):
+        return str(self)
+
 class B3HistoryImporter:
     """ Set of methods to deal with raw stock history files from B3
 
@@ -49,11 +56,14 @@ class B3HistoryImporter:
     exchange) website.
     """
 
-    def __init__(self, assets, inputdir):
+    def __init__(self, assets, inputdir, testMode = False):
         """Class constructor
        
         Sould receive the list of assets the user. Only data for the specified
-        assets will be processed from the input raw data files."""
+        assets will be processed from the input raw data files.
+        """
+
+        self.testMode = testMode
 
         # assets related data
         self.__assetNames = assets
@@ -72,6 +82,11 @@ class B3HistoryImporter:
         self.__RI_REG_AVG_PRICE_START = 95
         self.__RI_REG_AVG_PRICE_END = 108
 
+        # raw input data preffix definition
+        if self.testMode:
+            self.filePreffix = 'tCOTA'
+        else:
+            self.filePreffix = 'COTA'
 
     def listRawInputFiles(self):
         """Returns list of files under raw input files directory."""
@@ -79,7 +94,8 @@ class B3HistoryImporter:
         files = []
         with os.scandir(path=self.inputdir) as it:
             for entry in it:
-                if not entry.name.startswith('.') and entry.name.startswith('COTA') and entry.is_file():
+                if not entry.name.startswith('.') and entry.name.startswith(self.filePreffix) \
+                    and entry.is_file():
                     files.append(entry.name)
 
         return files
@@ -138,11 +154,19 @@ class UserDataImporter:
         5. Sell average price (with or without leading $)
     """
 
-    def __init__(self, inputdir):
+    def __init__(self, inputdir, testMode=False):
         """Class constructor"""
+
+        self.testMode = testMode
 
         # input files directory
         self.inputdir = inputdir
+
+        # raw input data preffix definition
+        if self.testMode:
+            self.filePreffix = 't'
+        else:
+            self.filePreffix = 'exp'
 
     def listUserInputFiles(self):
         """Returns list of files under user input files directory."""
@@ -150,7 +174,8 @@ class UserDataImporter:
         files = []
         with os.scandir(path=self.inputdir) as it:
             for entry in it:
-                if not entry.name.startswith('.') and entry.is_file():
+                if not entry.name.startswith('.') and entry.name.startswith(self.filePreffix) \
+                    and entry.is_file():
                     files.append(entry.name)
 
         return files
@@ -162,25 +187,34 @@ class UserDataImporter:
         t = Transaction()
         tokens = line.split()
 
+        date = tokens[1].replace('-', '')
         t.ticker = tokens[0]
-        t.date = tokens[1]
-        t.buyQtty = tokens[2]
-        t.sellQtty = tokens[3]
+        t.buyQtty = int(tokens[2])
+        t.sellQtty = int(tokens[3])
         t.buyPrice = float(tokens[4].lstrip('$'))
         t.sellPrice = float(tokens[5].lstrip('$'))
 
-        return t
+
+        return date, t
 
     def getUserInputData(self):
         """Read all user input files, parses their data and return a list of
         transactions."""
 
-        transactions = []
+        transactions = {}
         for file in self.listUserInputFiles():
             with open(os.path.join(self.inputdir, file)) as f:
                 for line in f:
-                    transactions.append(self.parseUserInputLine(line))
-
+                    date, t = self.parseUserInputLine(line)
+                    
+                    dayTransactions = []
+                    try:
+                        dayTransactions = transactions[date]
+                    except:
+                        pass
+                    
+                    dayTransactions.append(t)
+                    transactions[date] = dayTransactions
         return transactions
 
 class IBOVHistoryImporter:
@@ -191,14 +225,22 @@ class IBOVHistoryImporter:
     "date","opening","closing","variation","minimum","maximum","volume"
     """
 
-    def __init__(self, inputdir):
+    def __init__(self, inputdir, testMode=False):
         """Class constructor
        
         Should receive directory where IBOV data CSV files will be.
         """
 
+        self.testMode = testMode
+
         # input files directory
         self.inputdir = inputdir
+
+        # raw input data preffix definition
+        if self.testMode:
+            self.filePreffix = 'tIBOV'
+        else:
+            self.filePreffix = 'IBOV'
 
     def listIBOVInputFiles(self):
         """Returns list of files under raw input files directory."""
@@ -206,7 +248,8 @@ class IBOVHistoryImporter:
         files = []
         with os.scandir(path=self.inputdir) as it:
             for entry in it:
-                if not entry.name.startswith('.') and entry.name.startswith('IBOV') and entry.is_file():
+               if not entry.name.startswith('.') and entry.name.startswith(self.filePreffix) \
+                    and entry.is_file():
                     files.append(entry.name)
 
         return files
@@ -255,16 +298,8 @@ class IBOVHistoryImporter:
         """Read all IBOV input files and parses data for the specified assets upon
         class instance creation.
        
-        Return a dictionary within another dictionary, where data is accessed like:
-        result[DATE][PARAMETER], where:
-        - DATE is in "YYYY-MM-DD" format
-        - PARAMETER is one of the following:
-            - IBOVHistoryImporter.OPENING
-            - IBOVHistoryImporter.CLOSING
-            - IBOVHistoryImporter.VARIATION
-            - IBOVHistoryImporter.MINIMUM
-            - IBOVHistoryImporter.MAXIMUM
-            - IBOVHistoryImporter.VOLUME
+        Returns a dictonary of ibovDayData with date (str in YYYYMMDD format) as
+        keys.
         """
 
         result = {}
