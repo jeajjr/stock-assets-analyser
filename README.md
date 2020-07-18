@@ -88,10 +88,11 @@ may change in the future for optimization.
 
 ### Input data files
 
-The table below shows information about the files of each data type.
+The table below shows information about the files of each data type. All files
+should contain ASCII text.
 
 | **data** | **folder** | **test file name preffix** | **production file name preffix** |
 |--|--|--|--|
-| stock market history | raw-input | tCOTA* | COTA* |
-| IBOV historical data | raw-input | IBOV* | IBOV* |
-|user transactions history | user-input | t* | exp* |
+| stock market history | market-data | tCOTA* | COTA* |
+| IBOV historical data | market-data | IBOV* | IBOV* |
+|user transactions history | user-data | t* | exp* |

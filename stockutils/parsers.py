@@ -194,9 +194,6 @@ def differentTickerBuySim(days, assets, stockPrice, transactions, tday, tticker,
     
     newAssetDayQuantity = calculateDailyAssetQuantity(days, assets, newtransactions)
 
-    for newadq in newAssetDayQuantity:
-        print(newadq)
-    
     newdailyportifoliovalue = calculateDailyPortifolioValue(days, assets, newAssetDayQuantity, stockPrice)
 
     return newdailyportifoliovalue
