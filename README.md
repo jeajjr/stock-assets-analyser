@@ -9,7 +9,7 @@ transactions and presents graphical data for analysing and comparing both histor
 The first ideas, still under elaboration, are to allow the user to learn from past 
 portifolio transactions, allowing one to analyse and help validate their stock
 market moves and *modus operandi*. It should allow the user to simulate the 
-outcome of different past decisions.
+outcome of different possibilities for past decisions (i.e., transactions).
 
 ## Scope
 
@@ -21,9 +21,9 @@ Future implementations may add other markets accordingly.
 Current implementation is developed in Python 3. It should use matplotlib for 
 graphing and other data analysis libraries as necessary.
 
-The project incudes a stockutils module for:
-* reading raw market data
-* reading user transaction history data
+The project includes a stockutils module for:
+* reading and parsing raw market data
+* reading and parsing user transaction history data
 
 A Jupyter notebook is used to execute the module and practicing with the data.
 
@@ -34,13 +34,14 @@ Features currently or expected to be present on the project:
 * Parse raw data input file from stock exchange history - stage: done
 * Cache parsed raw data input file from stock exchange history - stage: TODO
 * Read user asset portifolio history - stage: done
-* Present graphically market and portifolio data - stage: in progress
+* Present graphically market and portifolio data - stage: done
 * Allow user to simulate other transactions for their timeling (say, what if I 
-bought asset Y instead of asset X on this given day) - stage: TODO
+bought asset Y instead of asset X on this given day) - stage: done
+* Implement GUI - stage: TODO
 
 ## Data sources
 
-There are three main sources of data for the project, all described below.
+There are three main data sources for the project, all described below.
 
 For stock exchange market history:
 * [B3 stock exchange historical data](http://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/market-data/historico/mercado-a-vista/cotacoes-historicas/)
@@ -57,7 +58,7 @@ For portifolio transactions history:
 ### B3 stock exchange market history
 
 Historical data for the market should be in the format as described on B3's website
-cite above.
+cited above.
 
 ### IBOV historical data
 
